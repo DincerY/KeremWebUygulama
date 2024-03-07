@@ -1,0 +1,74 @@
+﻿@layout LoginLayout
+@page "/"
+@using Newtonsoft.Json
+@using System.Text
+@using System.Net.Mime
+@using System.Runtime
+@using WebApp.Client.Authentication
+@inject NavigationManager NavManager
+@inject HttpClient Client
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+
+
+<div class="main">  	
+    <input type="checkbox" id="chk" aria-hidden="true">
+
+    <div class="signup">
+        <EditForm Model="@userCredentials" OnInvalidSubmit="Login">
+            <label style="color:white; " for="chk" aria-hidden="true">Login</label>
+            <input @bind="userCredentials.Email" type="email" name="email" placeholder="Email" required="">
+            <input @bind="userCredentials.Password" type="password" name="pswd" placeholder="Password" required="">
+            <button onclick="@Login()" type="submit" class="form-control col-6 btn btn-primary">Login</button>
+            <a href="signup" class="col-3">Sign Up or Register</a>
+        </EditForm>
+    </div>
+
+   
+</div>
+
+@code {
+    private UserCredentials userCredentials;
+    private bool IsAuthenticate;
+
+    protected override Task OnInitializedAsync()
+    {
+        userCredentials = new UserCredentials();
+        return base.OnInitializedAsync();
+    }
+
+    public async Task<bool> Login()
+    {
+        var jsonContent = new StringContent(JsonConvert.SerializeObject(userCredentials), Encoding.UTF8, MediaTypeNames.Application.Json);
+
+        if (jsonContent == null)
+        {
+            throw new Exception("Giriş bilgileri düzgün doldurulmadı");
+        }
+
+        HttpResponseMessage message = await Client.PostAsync("api/auth/login",jsonContent);
+        if (message.IsSuccessStatusCode)
+        {
+            IsAuthenticate = true;
+            await LocalStorage.SetItemAsync("Email", userCredentials.Email);
+            NavManager.NavigateTo("/index",true);
+        }
+        else
+        {
+            return await Task.FromResult(false);
+        }
+
+        return await Task.FromResult(true);
+    }
+
+    
+    
+
+    public bool GetAuthenticate() => IsAuthenticate;
+
+    public class UserCredentials
+    {
+        public string Email { get; set; }
+        public string Password { get; set; }
+    }
+}
