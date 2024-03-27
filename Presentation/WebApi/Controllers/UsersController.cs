@@ -1,4 +1,5 @@
 ﻿using Core.Application.Repositories;
+using Core.Application.Validator;
 using Core.Application.ViewModel;
 using Core.Domain.Entities;
 using Microsoft.AspNetCore.Http;
@@ -22,6 +23,19 @@ public class UsersController : ControllerBase
     [Route("add")]
     public async Task<ActionResult<bool>> AddUser([FromBody] VM_AddUser vm_addUser)
     {
+        var validator = new AddUserValidator();
+        var validationResult =await validator.ValidateAsync(vm_addUser);
+        var modelResult = "";
+        if (validationResult != null)
+        {
+            foreach (var error in validationResult.Errors)
+            {
+                modelResult += "Yanlış girilen alan: " + error.PropertyName + " - Hata mesajı: " + error.ErrorMessage + "\n";
+            }
+
+            return BadRequest(modelResult);
+        }
+
         User user = new()
         {
             Name = vm_addUser.Name,
@@ -49,6 +63,21 @@ public class UsersController : ControllerBase
     [Route("update")]
     public async Task<ActionResult<bool>> UpdateUserPassword([FromBody]VM_UpdateUser vm_updateUser)
     {
+        var validator = new UpdateUserValidator();
+        var validationResult = await validator.ValidateAsync(vm_updateUser);
+        var modelResult = "";
+        if (validationResult != null)
+        {
+            foreach (var error in validationResult.Errors)
+            {
+                modelResult += "Yanlış girilen alan: " + error.PropertyName + " - Hata mesajı: " + error.ErrorMessage + "\n";
+            }
+
+            return BadRequest(modelResult);
+        }
+
+
+
         var user = await _repository.GetByIdAsync(vm_updateUser.Id);
 
         if (user == null)
